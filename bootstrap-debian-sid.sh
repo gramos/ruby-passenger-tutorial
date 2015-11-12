@@ -4,7 +4,7 @@
 #
 
 export JAIL_NAME=debian-jessie-passenger
-export BASE_PATH=/home/gramos/jaulas
+export BASE_PATH=/home/lcostantini/jaulas
 export MY_CHROOT=$BASE_PATH/$JAIL_NAME
 
 if [[ ! -e $BASE_PATH/$JAIL_NAME ]]; then
@@ -12,6 +12,10 @@ if [[ ! -e $BASE_PATH/$JAIL_NAME ]]; then
 fi
 
 # --------------------------------------------------------------------------------
+
+echo "==> Install debootstrap..."
+
+apt-get install debootstrap
 
 echo "==> Starting preparing a fresh debian SID in ${MY_CHROOT}..."
 
