@@ -85,3 +85,44 @@ Luego precompilamos los assets y corremos las migraciones:
 ```
 bundle exec rake assets:precompile db:migrate RAILS_ENV=production
 ```
+
+```
+cd ..
+chown www-data:www-data passenger-ruby-rails-demo -R
+```
+
+Necesitamos habilitar passenger en el archivo de configuracion de nginx, editamos
+/etc/nginx.conf y descomentamos las siguientes lineas:
+
+```
+  ## passenger_root /usr/lib/ruby/vendor_ruby/phusion_passenger/locations.ini;
+  ## passenger_ruby /usr/bin/passenger_free_ruby;
+```
+
+ademas agregamos esto en la primer linea, para que nginx pueda encontrar nodejs sin problemas:
+
+```
+env PATH
+```
+
+Ahora vamos a agregar la configuracion necesaria para que nginx levante la app,
+vamos a crear un archivo en /etc/nginx/sites-available/passenger-ruby-rails-demo
+
+```
+server {
+    server_name passenger-ruby-rails-demo.com;
+    root /var/www/passenger-ruby-rails-demo/public;
+    passenger_ruby /usr/bin/ruby;
+    passenger_enabled on;
+    passenger_sticky_sessions on;
+}
+
+```
+Ademas necesitamos crear un symlink para habilitar el nuevo virtual host:
+
+```
+ln -s /etc/nginx/sites-available/passenger-ruby-rails-demo /etc/nginx/sites-enabled/passenger-ruby-rails-demo
+```
+
+service nginx reload
+
