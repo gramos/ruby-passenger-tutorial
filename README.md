@@ -30,6 +30,7 @@ sudo ./bootstrap.sh
 
 Ahora vamos a agregar el repositorio de Phusion Passenger para poder
 instalar la versión de Nginx con el módulo de Passenger incluido.
+Los pasos a seguir son que estan descriptos en la documentacion de passenger
 [Passenger Documentation](https://www.phusionpassenger.com/library/walkthroughs/deploy/ruby/ownserver/nginx/oss/jessie/install_passenger.html)
 
 ```bash
@@ -42,4 +43,45 @@ sh -c 'echo deb https://oss-binaries.phusionpassenger.com/apt/passenger jessie m
 apt-get update
 
 apt-get install -y nginx-extras passenger
+```
+
+## Deployar una app Rails.
+
+Vamos a clonar una app rails de ejemplo desde el repo de phusion.
+
+
+```bash
+cd /var/www
+git clone https://github.com/phusion/passenger-ruby-rails-demo.git
+cd passenger-ruby-rails-demo
+bundle install --deployment --without development test
+
+```
+
+Ahora tenemos que crear la secret key:
+
+
+```bash
+
+bundle exec rake secret
+````
+
+Editar config/secrets.yml y poner la clave generada:
+
+```
+production:
+  secret_key_base: the value that you copied from 'rake secret'
+
+```
+
+Ademas tenemos que poner los permisos correctos en algunos archivos de configuracion:
+```
+chmod 700 config db
+chmod 600 config/database.yml config/secrets.yml
+```
+
+Luego precompilamos los assets y corremos las migraciones:
+
+```
+bundle exec rake assets:precompile db:migrate RAILS_ENV=production
 ```
