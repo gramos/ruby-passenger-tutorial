@@ -102,7 +102,7 @@ Necesitamos habilitar passenger en el archivo de configuracion de nginx, editamo
 ademas agregamos esto en la primer linea, para que nginx pueda encontrar nodejs sin problemas:
 
 ```
-env PATH
+env PATH ;
 ```
 
 Ahora vamos a agregar la configuracion necesaria para que nginx levante la app,
