@@ -9,7 +9,7 @@ Los temas a tratar en este tutorial son:
 1. Instalar el sistema base.
 2. Instalar Nginx y Passenger.
 3. Deployar una aplicación Rails.
-4. Ab test y optimización.
+4. Benchmarking tool y optimización.
 5. Borrar el sistema base.
 
 ## Instalar el sistema base
@@ -49,32 +49,28 @@ apt-get install -y nginx-extras passenger
 
 Vamos a clonar una app rails de ejemplo desde el repo de phusion.
 
-
 ```bash
 cd /var/www
 git clone https://github.com/phusion/passenger-ruby-rails-demo.git
 cd passenger-ruby-rails-demo
 bundle install --deployment --without development test
-
 ```
 
 Ahora tenemos que crear la secret key:
 
-
 ```bash
-
 bundle exec rake secret
-````
+```
 
 Editar config/secrets.yml y poner la clave generada:
 
 ```
 production:
   secret_key_base: the value that you copied from 'rake secret'
-
 ```
 
 Ademas tenemos que poner los permisos correctos en algunos archivos de configuracion:
+
 ```
 chmod 700 config db
 chmod 600 config/database.yml config/secrets.yml
@@ -92,17 +88,19 @@ chown www-data:www-data passenger-ruby-rails-demo -R
 ```
 
 Necesitamos habilitar passenger en el archivo de configuracion de nginx, editamos
-/etc/nginx.conf y descomentamos las siguientes lineas:
+/etc/nginx/nginx.conf y hacemos lo siguiente:
 
-```
-  ## passenger_root /usr/lib/ruby/vendor_ruby/phusion_passenger/locations.ini;
-  ## passenger_ruby /usr/bin/passenger_free_ruby;
-```
-
-ademas agregamos esto en la primer linea, para que nginx pueda encontrar nodejs sin problemas:
+agregamos esto en la primer linea, para que nginx pueda encontrar nodejs sin problemas:
 
 ```
 env PATH ;
+```
+
+luego descomentamos las dos siguientes líneas:
+
+```
+  # passenger_root /usr/lib/ruby/vendor_ruby/phusion_passenger/locations.ini;
+  # passenger_ruby /usr/bin/passenger_free_ruby;
 ```
 
 Ahora vamos a agregar la configuracion necesaria para que nginx levante la app,
@@ -124,5 +122,46 @@ Ademas necesitamos crear un symlink para habilitar el nuevo virtual host:
 ln -s /etc/nginx/sites-available/passenger-ruby-rails-demo /etc/nginx/sites-enabled/passenger-ruby-rails-demo
 ```
 
-service nginx reload
+Editamos el archivo /etc/hosts y agregamos la siguiente línea para configurar el host virtual:
 
+```
+127.0.0.1       passenger-ruby-rails-demo.com
+```
+
+Finalmente reiniciamos el servicio de nginx
+
+```
+service nginx reload
+```
+
+Para comprobar que todo haya funcionado, hacemos uso del comando curl y nos devuelve la app de rails
+
+```
+curl passenger-ruby-rails-demo.com
+```
+
+## Benchmarking tool y optimización.
+
+Vamos a usar la herramienta recomendada por Phusion Passenger llamada **wrk**,
+hay que instalar la dependencia para compilarlo
+
+```
+apt-get install libssl-dev
+```
+
+después clonamos el repo y compilamos
+
+```
+git clone https://github.com/wg/wrk.git /opt/wrk
+cd /opt/wrk
+make
+```
+
+Despues ejecutamos wrk de la siguiente manera:
+
+```
+./wrk  -t12 -c400 -d30s http://passenger-ruby-rails-demo.com
+```
+
+El comando corre un benchmark por 30 segundos, usando 12 threads y
+mantiene 400 conexiones HTTP abiertas.
