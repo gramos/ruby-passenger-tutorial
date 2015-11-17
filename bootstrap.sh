@@ -23,16 +23,13 @@ debootstrap --arch i386 jessie $MY_CHROOT http://http.debian.net/debian/
 
 cp -r /home/gramos/jaulas/debian-jessie-base-img $BASE_PATH/$JAIL_NAME
 
-echo "proc $MY_CHROOT/proc proc defaults 0 0" >> /etc/fstab
-mount proc $MY_CHROOT/proc -t proc
-echo "sysfs $MY_CHROOT/sys sysfs defaults 0 0" >> /etc/fstab
-mount sysfs $MY_CHROOT/sys -t sysfs
 cp /etc/hosts $MY_CHROOT/etc/hosts
-cp /proc/mounts $MY_CHROOT/etc/mtab
 
+chroot $MY_CHROOT mount -t proc proc /proc
 # --------------------------------------------------------------------------------
 
 echo '==> Installing required basic packages...'
+
 
 chroot $MY_CHROOT apt-get update
 
