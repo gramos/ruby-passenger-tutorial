@@ -77,7 +77,7 @@ chmod 600 config/database.yml config/secrets.yml
 ```
 
 Luego precompilamos los assets y corremos las migraciones:
-
+q
 ```
 bundle exec rake assets:precompile db:migrate RAILS_ENV=production
 ```
@@ -140,10 +140,13 @@ Para comprobar que todo haya funcionado, hacemos uso del comando curl y nos devu
 curl passenger-ruby-rails-demo.com
 ```
 
-## Benchmarking tool y optimización.
+## Benchmarking y optimización.
+
+https://www.phusionpassenger.com/library/config/nginx/optimization/
 
 Vamos a usar la herramienta recomendada por Phusion Passenger llamada **wrk**,
-hay que instalar la dependencia para compilarlo
+hay que instalar la lib de ssl requerida para compilarlo para compilarlo:
+
 
 ```
 apt-get install libssl-dev
@@ -160,8 +163,56 @@ make
 Despues ejecutamos wrk de la siguiente manera:
 
 ```
-./wrk  -t12 -c400 -d30s http://passenger-ruby-rails-demo.com
+root@noesmia:/opt/wrk# ./wrk -t12 -c100 -d30s http://passenger-ruby-rails-demo.com
+Running 30s test @ http://passenger-ruby-rails-demo.com
+12 threads and 100 connections
+Thread Stats   Avg      Stdev     Max   +/- Stdev
+Latency   118.45ms    6.57ms 163.60ms   86.06%
+Req/Sec    67.44     10.28    80.00     63.46%
+24279 requests in 30.06s, 36.01MB read
+Requests/sec:    807.74
+Transfer/sec:      1.20MB
 ```
 
 El comando corre un benchmark por 30 segundos, usando 12 threads y
-mantiene 400 conexiones HTTP abiertas.
+mantiene 100 conexiones HTTP abiertas.
+
+Despues de unos segundos de correr wrk, corremos passenger-status:
+
+```
+root@noesmia:/# passenger-status
+Version : 5.0.21
+Date    : 2015-11-17 16:37:57 +0000
+Instance: Ran06atn (nginx/1.8.0 Phusion_Passenger/5.0.21)
+
+----------- General information -----------
+Max pool size : 6
+App groups    : 1
+Processes     : 6
+Requests in top-level queue : 0
+
+----------- Application groups -----------
+/var/www/passenger-ruby-rails-demo/public:
+App root: /var/www/passenger-ruby-rails-demo
+Requests in queue: 0
+* PID: 9675    Sessions: 0       Processed: 26557   Uptime: 12m 1s
+CPU: 14%     Memory  : 39M     Last used: 0s ago
+* PID: 9682    Sessions: 0       Processed: 26709   Uptime: 12m 1s
+CPU: 14%     Memory  : 36M     Last used: 0s ago
+* PID: 9689    Sessions: 0       Processed: 26705   Uptime: 12m 1s
+CPU: 14%     Memory  : 36M     Last used: 0s ago
+* PID: 9694    Sessions: 0       Processed: 26646   Uptime: 12m 0s
+CPU: 14%     Memory  : 36M     Last used: 0s ago
+* PID: 9703    Sessions: 0       Processed: 26706   Uptime: 12m 0s
+CPU: 14%     Memory  : 36M     Last used: 0s ago
+* PID: 9710    Sessions: 0       Processed: 26814   Uptime: 12m 0s
+CPU: 14%     Memory  : 36M     Last used: 0s ago
+```
+
+Con esta informacion podemos hacer algunos calculos para optimizar
+un poco passenger y aumentar la cantidad de procesos. Tenemos que usar
+la formula descripta en la doc de passenger.
+
+max_app_processes = (TOTAL_RAM * 0.75) / RAM_PER_PROCESS
+
+( 8000 * 0.75 ) / 50 = 120 max_app_processes
