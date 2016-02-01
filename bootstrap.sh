@@ -21,8 +21,6 @@ echo "==> Starting preparing a fresh debian SID in ${MY_CHROOT}..."
 
 debootstrap --arch i386 jessie $MY_CHROOT http://http.debian.net/debian/
 
-cp -r /home/gramos/jaulas/debian-jessie-base-img $BASE_PATH/$JAIL_NAME
-
 cp /etc/hosts $MY_CHROOT/etc/hosts
 
 chroot $MY_CHROOT mount -t proc proc /proc
